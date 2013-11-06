@@ -2,6 +2,12 @@
 
 {% block title %}Monitors{% endblock %}
 {% block content %}
+<div class="clearfix">
+	<div class="pull-right">
+		<a class="btn btn-info" href="/create">Create Monitor</a>
+	</div>
+	<h2>Monitors</h2>
+</div>
 <table class="table table-bordered table-striped">
 	<thead>
 		<tr>
@@ -15,7 +21,7 @@
 		<tr>
 			<td>{{ monitor.name }}</td>
 			<td>{{ monitor.state }}</td>
-			<td>---</td>
+			<td><a class="btn btn-small" href="{{ url_for('monitor_detail', monitor_id=monitor.id) }}">Detail</a></td>
 		</tr>
 		{% endfor %}
 	</tbody>

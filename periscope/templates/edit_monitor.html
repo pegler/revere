@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block title %}Create a Monitor{% endblock %}
+
+{% block content %}
+{% macro render_field(field) %}
+	<div class="control-group">
+		<label class="control-label">{{ field.label.text }}</label>
+		<div class="controls">
+			{{ field(**kwargs)|safe }}
+			{% if field.errors %}
+				<ul>
+					{% for error in field.errors %}
+				      <li>{{ error }}</li>
+				    {% endfor %}
+			    </ul>
+			{% endif %}
+		</div>
+	</div>
+{% endmacro %}
+
+<h2>Create a Monitor</h2>
+<form class="form-horizontal" method="POST">
+	{{ render_field(form.name, style="width: 100%") }}
+	{{ render_field(form.active) }}
+	<h3>Schedule</h3>
+	<p>
+		All schedule fields are cron format
+	</p>
+	{{ render_field(form.schedule_year) }}
+	{{ render_field(form.schedule_month) }}
+	{{ render_field(form.schedule_day) }}
+	{{ render_field(form.schedule_day_of_week) }}
+	{{ render_field(form.schedule_week) }}
+	{{ render_field(form.schedule_hour) }}
+	{{ render_field(form.schedule_minute) }}
+	{{ render_field(form.schedule_second) }}
+	
+	<h3>Task</h3>
+	<p>
+		Variables are:
+		<ul>
+			<li>
+				<strong>sources</strong> - a dict as defined in the configuration
+				<ul>
+					{% for source_name, source in sources.items() %}
+						<li>source['{{ source_name }}'] - {{ source.type_name }}<br/>{{ source.description }}</li>
+					{% endfor %}
+				</ul>
+			</li>
+		</ul>
+	</p>
+	<p>
+		Raise a 'MonitorFailure' Exception if this monitor has failed.  All other exceptions will be considered errors.
+	</p>
+	{{ form.task(style="width: 100%", rows="15") }}
+	<div class="controls">
+		<button type="submit" class="btn btn-large btn-primary">Save Monitor</button>
+	</div>
+</form>
+{% endblock %}

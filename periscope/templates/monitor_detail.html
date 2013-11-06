@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}Monitor Detail: {{ monitor.name }}{% endblock %}
+{% block content %}
+
+<div class="clearfix">
+	<div class="pull-right">
+		<a class="btn btn-info" href="{{ url_for('monitor_edit', monitor_id=monitor.id) }}">Edit</a>
+	</div>
+	<h2>Monitor Detail: {{ monitor.name }}</h2>
+</div>
+
+<div class="row">
+	<div class="span6">
+		<h3>Task</h3>
+		<pre>{{ monitor.task }}</pre>
+	</div>
+	<div class="span4">
+		<h3>History</h3>
+		{% for change in monitor.changes.order_by('timestamp DESC').limit(20) %}
+			<div class="togglemessage">
+				<div class="clearfix">
+					{{ change.old_state }} &rarr; {{ change.new_state }}
+					<div class="pull-right">
+						<span title="{{ change.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ change.timestamp.isoformat() }}Z"></span>
+					</div>
+				</div>
+				<div class="message">
+					<div class="alert alert-info">
+						{{ change.message or 'None' }}
+					</div>
+				</div>
+			</div>
+			<hr style="margin: 3px 0; border: solid 1px black;"/>
+		{% endfor %}
+	</div>
+</div>
+
+{% endblock %}
