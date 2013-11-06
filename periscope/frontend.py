@@ -17,7 +17,7 @@ def get_klass(klass):
     module = importlib.import_module(module_name)
     return getattr(module, class_name)
 
-for source_name, source_details in app.config['PERISCOPE_SOURCES'].items():
+for source_name, source_details in app.config.get('PERISCOPE_SOURCES', {}).items():
     sources[source_name] = get_klass(source_details['type'])(source_details['config'])
     sources[source_name].description = source_details.get('description')
 
