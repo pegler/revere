@@ -140,8 +140,8 @@ class Monitor(db.Model):
         old_state = self.state
 
         state_changed = old_state != new_state
-        if state_changed: 
-            send_alert()
+        if state_changed:
+            send_alert(self, old_state, new_state, message, return_value)
 
         change = MonitorLog(monitor=self,
                             message=message,
@@ -292,7 +292,7 @@ def create():
         db.session.commit()
         update_monitor_scheduler(new_monitor)
         return redirect(url_for('monitor_detail', monitor_id=new_monitor.id))
-    return render_template('edit_monitor.html', form=form, sources=sources, create=True)
+    return render_template('monitor_edit.html', form=form, sources=sources, create=True)
 
 @app.route('/alerts')
 def alert_list():
@@ -322,9 +322,11 @@ alerts = {}
 monitor_jobs = {}
 
 ### Alert utility functions
-
 def send_alert(monitor, old_state, new_state, message, return_value):
-    pass
+    for alert_name, alert in alerts.items():
+        alert_obj = Alert.query.filter_by(key=alert_name).first()
+        if new_state in alert_obj.get_alert_states():
+            alert.trigger(monitor, old_state, new_state, message, return_value)
 
 ## Scheduler utility functions
 
@@ -388,11 +390,13 @@ def initialize_revere():
     
     ### Initialize the sources
     for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
-        sources[source_name] = get_klass(source_details['type'])(source_details.get('description'), source_details['config'])
+        sources[source_name] = get_klass(source_details['type'])(description=source_details.get('description'),
+                                                                 config=source_details['config'])
         
     ### Initialize the alerts
     for alert_name, alert_details in app.config.get('REVERE_ALERTS', {}).items():
-        alerts[alert_name] = get_klass(alert_details['type'])(alert_details.get('description'), alert_details['config'])
+        alerts[alert_name] = get_klass(alert_details['type'])(description=alert_details.get('description'),
+                                                              config=alert_details['config'])
         alert = Alert.query.filter_by(key=alert_name).first()
         if not alert:
             alert=Alert(key=alert_name)

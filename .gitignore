@@ -1,6 +1,6 @@
-periscope/config.py
+revere/config.py
 .settings/*
-periscope/periscope.db
+revere/revere.db
 
 *.py[cod]
 
