@@ -6,8 +6,8 @@ import json
 class CampfireAlert(BaseRevereAlert):
     name = 'Campfire'
 
-    def __init__(self, description, config):
-        super(CampfireAlert, self).__init__(description, config)
+    def __init__(self, description, config, enabled_in_config=True):
+        super(CampfireAlert, self).__init__(description, config, enabled_in_config)
 
         required_params = ['api_token', 'room_id', 'subdomain']
         for param in required_params:

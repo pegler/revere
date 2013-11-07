@@ -49,7 +49,7 @@
 				<strong>sources</strong> - a dict as defined in the configuration
 				<ul>
 					{% for source_name, source in sources.items() %}
-						<li>source['{{ source_name }}'] - {{ source.type_name }}<br/>{{ source.description }}</li>
+						<li>source['{{ source_name }}'] - {{ source.name }}<br/>{{ source.description }}</li>
 					{% endfor %}
 				</ul>
 			</li>
@@ -59,7 +59,7 @@
 		Raise a 'MonitorFailure' Exception if this monitor has failed.  All other exceptions will be considered errors.
 	</p>
 	<p>
-		Anything assigned to the variable "retval" will be retained in the logs.
+		Anything assigned to the variable "return_value" will be retained in the logs.
 	</p>
 	{{ form.task(style="width: 100%", rows="15") }}
 	<div class="controls">

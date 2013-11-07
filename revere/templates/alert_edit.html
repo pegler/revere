@@ -21,6 +21,11 @@
 
 
 <h2>Edit Alert: {{ alert.name }} - {{ alert.description }}</h2>
+{% if not alert.enabled_in_config %}
+<div class="alert alert-info">
+	<strong>This Alert is Disabled</strong> - the configuration file has explictly disabled this Alert.
+</div>
+{% endif %}
 <form class="form-horizontal" method="POST">
 	<h3>Global Toggle</h3>
 	{{ render_field(form.enabled) }}

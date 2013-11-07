@@ -86,6 +86,10 @@ class Alert(db.Model):
     def description(self):
         return alerts[self.key].description
 
+    @property
+    def enabled_in_config(self):
+        return alerts[self.key].enabled_in_config
+
     def get_alert_states(self):
         if not self.enabled:
             return []
@@ -161,7 +165,7 @@ class Monitor(db.Model):
         class MonitorFailure(Exception):
             pass
 
-        retval = None
+        return_value = None
         message = None
         new_status = None
 
@@ -177,7 +181,10 @@ class Monitor(db.Model):
             message = 'Monitor Passed'
             new_status = 'OK'
 
-        self.record_run(new_status, message, retval)
+        if return_value is not None and not isinstance(return_value, (int, float, basestring)):
+            return_value = 'Invalid return_value'
+
+        self.record_run(new_status, message, return_value)
 
 
 class MonitorLog(db.Model):
@@ -330,7 +337,7 @@ monitor_jobs = {}
 def send_alert(monitor, old_state, new_state, message, return_value):
     for alert_name, alert in alerts.items():
         alert_obj = Alert.query.filter_by(key=alert_name).first()
-        if new_state in alert_obj.get_alert_states():
+        if alert.enabled_in_config and new_state in alert_obj.get_alert_states():
             alert.trigger(monitor, old_state, new_state, message, return_value)
 
 ## Scheduler utility functions
@@ -396,20 +403,23 @@ def initialize_revere():
 
     ### Initialize the sources
     for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
+        if source_details.get('enabled') is False:
+            continue
         sources[source_name] = get_klass(source_details['type'])(description=source_details.get('description'),
                                                                  config=source_details['config'])
 
     ### Initialize the alerts
     for alert_name, alert_details in app.config.get('REVERE_ALERTS', {}).items():
         alerts[alert_name] = get_klass(alert_details['type'])(description=alert_details.get('description'),
-                                                              config=alert_details['config'])
+                                                              config=alert_details['config'],
+                                                              enabled_in_config=alert_details.get('enabled', True))
         alert = Alert.query.filter_by(key=alert_name).first()
         if not alert:
             alert = Alert(key=alert_name)
             db.session.add(alert)
-    db.session.commit()
 
     Alert.query.filter(not_(Alert.key.in_(alerts.keys()))).delete(synchronize_session='fetch')
+    db.session.commit()
 
     # Run the maintenance routine hourly
     scheduler.add_cron_job(monitor_maintenance, year="*", month="*", day="*", hour="*", minute="0")
