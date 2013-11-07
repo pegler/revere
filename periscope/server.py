@@ -117,6 +117,7 @@ class Monitor(db.Model):
                             return_value=return_value,
                             old_state=old_state,
                             new_state=new_state,
+                            changed=old_state!=new_state,
                             timestamp=datetime.datetime.utcnow())
         
         self.state = new_state
@@ -153,8 +154,9 @@ class MonitorLog(db.Model):
         backref=db.backref('logs', lazy='dynamic'))
     message = db.Column(db.Text())
     return_value = db.Column(db.String(255))
-    old_state = db.Column(ChoiceType(MONITOR_STATES), index=True)
-    new_state = db.Column(ChoiceType(MONITOR_STATES), index=True)
+    old_state = db.Column(ChoiceType(MONITOR_STATES))
+    new_state = db.Column(ChoiceType(MONITOR_STATES))
+    changed = db.Column(db.Boolean())
     timestamp = db.Column(db.DateTime(), index=True)
     
 MonitorForm = model_form(Monitor, base_class=Form,

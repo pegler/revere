@@ -17,7 +17,7 @@
 	</div>
 	<div class="span4">
 		<h3><a href="{{ url_for('monitor_history', monitor_id=monitor.id) }}">History</a></h3>
-		{% for log in monitor.logs.filter('old_state!=new_state').order_by('timestamp DESC').limit(20) %}
+		{% for log in monitor.logs.filter_by(changed=True).order_by('timestamp DESC').limit(20) %}
 			<div class="togglemessage">
 				<div class="clearfix">
 					{{ log.old_state }} &rarr; {{ log.new_state }}
