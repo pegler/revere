@@ -1,4 +1,4 @@
-periscope [![Build Status](https://travis-ci.org/pegler/periscope.png)](https://travis-ci.org/pegler/periscope) [![Coverage Status](https://coveralls.io/repos/pegler/periscope/badge.png)](https://coveralls.io/r/pegler/periscope)
+revere [![Build Status](https://travis-ci.org/pegler/revere.png)](https://travis-ci.org/pegler/revere) [![Coverage Status](https://coveralls.io/repos/pegler/revere/badge.png)](https://coveralls.io/r/pegler/revere)
 =========
 
-general purpose monitoring system
+general purpose monitoring and alerting system

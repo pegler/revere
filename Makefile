@@ -1,5 +1,5 @@
 test:
-	flake8 periscope --ignore=E501,E128
-	nosetests --with-coverage --cover-branches --cover-inclusive --cover-package=periscope
+	flake8 revere --ignore=E501,E128
+	nosetests --with-coverage --cover-branches --cover-inclusive --cover-package=revere
 
 .PHONY: test

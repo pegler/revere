@@ -18,7 +18,7 @@ import signal
 import sqlalchemy.types as types
 import sys
 
-logger = logging.getLogger('periscope')
+logger = logging.getLogger('revere')
 
 root = logging.getLogger()
 ch = logging.StreamHandler(sys.stdout)
@@ -29,18 +29,18 @@ root.setLevel(logging.DEBUG)
 root.addHandler(ch)
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description='Periscope - general purpose monitoring and alerting')
+    argparser = argparse.ArgumentParser(description='Revere - general purpose monitoring and alerting')
     subparsers = argparser.add_subparsers(help='sub-command help', dest='subparser_name')
 
-    parser_run = subparsers.add_parser('run', help="run the periscope server")
+    parser_run = subparsers.add_parser('run', help="run the server")
     parser_run.add_argument("-c", "--config", help="specify config file")
     parser_run.add_argument("-p", "--port", default='5000', help="port to run the server on")
 
-    parser_init = subparsers.add_parser('init', help="initialize periscope - create a sqlite database and table")
+    parser_init = subparsers.add_parser('init', help="initialize Revere - create a sqlite database and table")
 
     args = argparser.parse_args()
 
-app = Flask('periscope')
+app = Flask('revere')
 app.config['WTF_CSRF_ENABLED'] = False
 app.config.from_pyfile('config.py')
 
@@ -57,14 +57,14 @@ def get_klass(klass):
     module = importlib.import_module(module_name)
     return getattr(module, class_name)
 
-for source_name, source_details in app.config.get('PERISCOPE_SOURCES', {}).items():
+for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
     sources[source_name] = get_klass(source_details['type'])(source_details['config'])
     sources[source_name].description = source_details.get('description')
 
 
 ### Models
 if 'SQLALCHEMY_DATABASE_URI' not in app.config:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(DIRNAME, 'periscope.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(DIRNAME, 'revere.db')
 
 db = SQLAlchemy(app)
 
@@ -346,6 +346,6 @@ if __name__ == '__main__':
         scheduler.start()
         logger.info('Scheduler started')
         logger.info('Tornado (webserver) starting')
-        logger.info('Periscope Server running on port %s' % args.port)
+        logger.info('Revere Server running on port %s' % args.port)
         IOLoop.instance().start()
         sys.exit(0)
