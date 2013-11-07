@@ -5,7 +5,7 @@ python:
 install:
   - "if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install importlib; fi"
   - pip install -e .
-  - cp tests/config.py periscope/config.py
+  - cp tests/config.py revere/config.py
   - pip install -r requirements/tests.txt
 script:
   - make test

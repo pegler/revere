@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Alert: {{ alert.name }} - {{ alert.description }}{% endblock %}
+
+{% block content %}
+{% macro render_field(field) %}
+	<div class="control-group">
+		<label class="control-label">{{ field.label.text }}</label>
+		<div class="controls">
+			{{ field(**kwargs)|safe }}
+			{% if field.errors %}
+				<ul>
+					{% for error in field.errors %}
+				      <li>{{ error }}</li>
+				    {% endfor %}
+			    </ul>
+			{% endif %}
+		</div>
+	</div>
+{% endmacro %}
+
+
+<h2>Edit Alert: {{ alert.name }} - {{ alert.description }}</h2>
+<form class="form-horizontal" method="POST">
+	<h3>Global Toggle</h3>
+	{{ render_field(form.enabled) }}
+	<h3>Individual States</h3>
+	<p>
+		This alert will be triggered when a monitor enteres any enabled states
+	</p>
+	{{ render_field(form.state_ok) }}
+	{{ render_field(form.state_alarm) }}
+	{{ render_field(form.state_error) }}
+	{{ render_field(form.state_inactive) }}
+	<div class="controls">
+		<button type="submit" class="btn btn-large btn-primary">Save Alert</button>
+	</div>
+</form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}Monitors{% endblock %}
+{% block content %}
+<h2>Alerts</h2>
+<table class="table table-bordered table-striped">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Description</th>
+			<th>Alert States</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for alert in alerts %}
+		<tr>
+			<td>{% if not alert.enabled %}<strong>Disabled</strong>&mdash;{% endif %}{{ alert.name }}</td>
+			<td>{{ alert.description }}</td>
+			<td>{% if alert.get_alert_states() %}{{ ', '.join(alert.get_alert_states()) }}{% else %}None{% endif %}</td>
+			<td><a class="btn btn-small" href="{{ url_for('alert_edit', alert_id=alert.id) }}">Edit</a></td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endblock %}

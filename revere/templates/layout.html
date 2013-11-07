@@ -12,7 +12,7 @@
     <script type="text/javascript" src="{{ url_for('static', filename='moment.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='livestamp.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
-    <title>{% block title %}{% endblock %} - Periscope</title>
+    <title>{% block title %}{% endblock %} - Revere</title>
     {% endblock %}
   </head>
   <body>
@@ -24,14 +24,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="/">Periscope</a>
+          <a class="brand" href="/">Revere</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
               <li class="">
-                <a href="/">Monitors</a>
+                <a href="{{ url_for('monitor_list') }}">Monitors</a>
               </li>
               <li class="">
-                <a href="/alarmas">Alarms</a>
+                <a href="{{ url_for('alert_list') }}">Alerts</a>
               </li>
             </ul>
           </div>

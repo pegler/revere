@@ -2,7 +2,7 @@ from apscheduler.scheduler import Scheduler
 from flask import Flask, render_template, request, url_for, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.wtf import Form
-from sqlalchemy.sql import and_
+from sqlalchemy.sql import and_, not_
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.wsgi import WSGIContainer
@@ -48,20 +48,6 @@ scheduler = Scheduler()
 
 DIRNAME = os.path.abspath(os.path.dirname(__file__))
 
-### Initialize the sources
-sources = {}
-
-
-def get_klass(klass):
-    module_name, class_name = klass.rsplit(".", 1)
-    module = importlib.import_module(module_name)
-    return getattr(module, class_name)
-
-for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
-    sources[source_name] = get_klass(source_details['type'])(source_details['config'])
-    sources[source_name].description = source_details.get('description')
-
-
 ### Models
 if 'SQLALCHEMY_DATABASE_URI' not in app.config:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(DIRNAME, 'revere.db')
@@ -81,6 +67,42 @@ class ChoiceType(types.TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return self.choices[value]
+    
+class Alert(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String, index=True, unique=True)
+    enabled = db.Column(db.Boolean, default=True)
+    state_ok = db.Column(db.Boolean(), default=True)
+    state_alarm = db.Column(db.Boolean(), default=True)
+    state_error = db.Column(db.Boolean(), default=True)
+    state_inactive = db.Column(db.Boolean(), default=False)
+    
+    @property
+    def name(self):
+        return alerts[self.key].name
+    
+    @property
+    def description(self):
+        return alerts[self.key].description
+    
+    def get_alert_states(self):
+        if not self.enabled:
+            return []
+
+        states = []
+        if self.state_ok:
+            states.append('OK')
+        if self.state_alarm:
+            states.append('ALARM')
+        if self.state_error:
+            states.append('ERROR')
+        if self.state_inactive:
+            states.append('INACTIVE')
+
+        return states
+
+AlertForm = model_form(Alert, base_class=Form,
+                       exclude=['id', 'key'])
 
 MONITOR_OK = 0
 MONITOR_ALARM = 1
@@ -116,12 +138,17 @@ class Monitor(db.Model):
         global db
 
         old_state = self.state
+
+        state_changed = old_state != new_state
+        if state_changed: 
+            send_alert()
+
         change = MonitorLog(monitor=self,
                             message=message,
                             return_value=return_value,
                             old_state=old_state,
                             new_state=new_state,
-                            changed=(old_state != new_state),
+                            state_changed=state_changed,
                             timestamp=datetime.datetime.utcnow())
 
         self.state = new_state
@@ -161,7 +188,7 @@ class MonitorLog(db.Model):
     return_value = db.Column(db.String(255))
     old_state = db.Column(ChoiceType(MONITOR_STATES))
     new_state = db.Column(ChoiceType(MONITOR_STATES))
-    changed = db.Column(db.Boolean())
+    state_changed = db.Column(db.Boolean())
     timestamp = db.Column(db.DateTime(), index=True)
 
 MonitorForm = model_form(Monitor, base_class=Form,
@@ -198,9 +225,9 @@ MonitorForm = model_form(Monitor, base_class=Form,
 
 
 @app.route('/')
-def index():
+def monitor_list():
     monitors = Monitor.query.all()
-    return render_template('index.html', monitors=monitors)
+    return render_template('monitor_list.html', monitors=monitors)
 
 
 @app.route('/monitor/<monitor_id>')
@@ -252,7 +279,7 @@ def monitor_edit(monitor_id):
         monitor.record_run('INACTIVE', 'Monitor edited', None)
         update_monitor_scheduler(monitor)
         return redirect(url_for('monitor_detail', monitor_id=monitor.id))
-    return render_template('edit_monitor.html', form=form, sources=sources, monitor=monitor, create=False)
+    return render_template('monitor_edit.html', form=form, sources=sources, monitor=monitor, create=False)
 
 
 @app.route('/create', methods=['GET', 'POST'])
@@ -267,6 +294,38 @@ def create():
         return redirect(url_for('monitor_detail', monitor_id=new_monitor.id))
     return render_template('edit_monitor.html', form=form, sources=sources, create=True)
 
+@app.route('/alerts')
+def alert_list():
+    alerts = Alert.query.all()
+    return render_template('alert_list.html', alerts=alerts)
+
+@app.route('/alert/<alert_id>/edit', methods=['GET','POST'])
+def alert_edit(alert_id):
+    alert = Alert.query.get_or_404(alert_id)
+
+    form = AlertForm(request.form, alert)
+    if form.validate_on_submit():
+        form.populate_obj(alert)
+        db.session.add(alert)
+        db.session.commit()
+        return redirect(url_for('alert_list'))
+    return render_template('alert_edit.html', form=form, alert=alert)
+
+def get_klass(klass):
+    module_name, class_name = klass.rsplit(".", 1)
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)
+
+### Define our data structures
+sources = {}
+alerts = {}
+monitor_jobs = {}
+
+### Alert utility functions
+
+def send_alert(monitor, old_state, new_state, message, return_value):
+    pass
+
 ## Scheduler utility functions
 
 
@@ -276,15 +335,10 @@ def monitor_maintenance():
         cutoff = now - datetime.timedelta(days=monitor.retain_days)
         MonitorLog.query.filter(and_(MonitorLog.monitor_id == monitor.id, MonitorLog.timestamp < cutoff)).delete()
 
-# Run the maintenance routine hourly
-scheduler.add_cron_job(monitor_maintenance, year="*", month="*", day="*", hour="*", minute="0")
-
 
 def run_monitor(monitor_id):
     monitor = Monitor.query.get(monitor_id)
     monitor.run()
-
-monitor_jobs = {}
 
 
 def update_monitor_scheduler(monitor):
@@ -327,6 +381,28 @@ def try_exit():
         IOLoop.instance().stop()
         scheduler.shutdown()
         logger.info('exit success')
+        
+### Initialization function - call after we initialize Flask and the DB
+def initialize_revere():
+    global sources, alerts
+    
+    ### Initialize the sources
+    for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
+        sources[source_name] = get_klass(source_details['type'])(source_details.get('description'), source_details['config'])
+        
+    ### Initialize the alerts
+    for alert_name, alert_details in app.config.get('REVERE_ALERTS', {}).items():
+        alerts[alert_name] = get_klass(alert_details['type'])(alert_details.get('description'), alert_details['config'])
+        alert = Alert.query.filter_by(key=alert_name).first()
+        if not alert:
+            alert=Alert(key=alert_name)
+            db.session.add(alert)
+    db.session.commit()
+
+    Alert.query.filter(not_(Alert.key.in_(alerts.keys()))).delete(synchronize_session='fetch')
+
+    # Run the maintenance routine hourly
+    scheduler.add_cron_job(monitor_maintenance, year="*", month="*", day="*", hour="*", minute="0")
 
 
 if __name__ == '__main__':
@@ -345,6 +421,9 @@ if __name__ == '__main__':
         logger.info('Scheduler starting')
         scheduler.start()
         logger.info('Scheduler started')
+        logger.info('Initializing Revere')
+        initialize_revere()
+        logger.info('Initialized Revere')
         logger.info('Tornado (webserver) starting')
         logger.info('Revere Server running on port %s' % args.port)
         IOLoop.instance().start()

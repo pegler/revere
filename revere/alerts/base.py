@@ -1,7 +1,6 @@
 
-
-class BaseRevereSource(object):
+class BaseRevereAlert(object):
     name = ''
     
     def __init__(self, description=None, config={}):
-        pass
+        self.description = description
