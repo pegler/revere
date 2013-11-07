@@ -2,6 +2,7 @@ from revere.alerts.base import BaseRevereAlert
 import requests
 import json
 
+
 class CampfireAlert(BaseRevereAlert):
     name = 'Campfire'
 
@@ -13,7 +14,7 @@ class CampfireAlert(BaseRevereAlert):
             if param not in config or not config[param]:
                 raise Exception('Campfire Alert Improperly Configured: missing parameter: %s' % param)
         self.config = config
-        
+
     def trigger(self, monitor, old_state, new_state, message, return_value):
         message_vars = {
             'monitor_name': monitor.name,
@@ -24,15 +25,15 @@ class CampfireAlert(BaseRevereAlert):
         }
         message = json.dumps({
             'message': {
-                'body': '[Revere Alert]\nMonitor: %(monitor_name)s\nState Change: %(old_state)s -> %(new_state)s\nMessage: %(message)s\nReturn Value: %(return_value)s' % message_vars,
+                'body': '[Revere Alarm]\nMonitor: %(monitor_name)s\nState Change: %(old_state)s -> %(new_state)s\nMessage: %(message)s\nReturn Value: %(return_value)s' % message_vars,
                 'type': 'PasteMessage'
             }
         })
-        
+
         headers = {'Content-Type': 'application/json'}
         auth = (self.config['api_token'], 'X')
-        
-        response = requests.post('https://{subdomain}.campfirenow.com/room/{room_id}/speak.json'.format(**self.config),
+
+        requests.post('https://{subdomain}.campfirenow.com/room/{room_id}/speak.json'.format(**self.config),
                       data=message,
                       headers=headers,
                       auth=auth)

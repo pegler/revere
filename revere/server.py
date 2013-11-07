@@ -67,7 +67,8 @@ class ChoiceType(types.TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return self.choices[value]
-    
+
+
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String, index=True, unique=True)
@@ -76,15 +77,15 @@ class Alert(db.Model):
     state_alarm = db.Column(db.Boolean(), default=True)
     state_error = db.Column(db.Boolean(), default=True)
     state_inactive = db.Column(db.Boolean(), default=False)
-    
+
     @property
     def name(self):
         return alerts[self.key].name
-    
+
     @property
     def description(self):
         return alerts[self.key].description
-    
+
     def get_alert_states(self):
         if not self.enabled:
             return []
@@ -294,12 +295,14 @@ def create():
         return redirect(url_for('monitor_detail', monitor_id=new_monitor.id))
     return render_template('monitor_edit.html', form=form, sources=sources, create=True)
 
+
 @app.route('/alerts')
 def alert_list():
     alerts = Alert.query.all()
     return render_template('alert_list.html', alerts=alerts)
 
-@app.route('/alert/<alert_id>/edit', methods=['GET','POST'])
+
+@app.route('/alert/<alert_id>/edit', methods=['GET', 'POST'])
 def alert_edit(alert_id):
     alert = Alert.query.get_or_404(alert_id)
 
@@ -311,6 +314,7 @@ def alert_edit(alert_id):
         return redirect(url_for('alert_list'))
     return render_template('alert_edit.html', form=form, alert=alert)
 
+
 def get_klass(klass):
     module_name, class_name = klass.rsplit(".", 1)
     module = importlib.import_module(module_name)
@@ -320,6 +324,7 @@ def get_klass(klass):
 sources = {}
 alerts = {}
 monitor_jobs = {}
+
 
 ### Alert utility functions
 def send_alert(monitor, old_state, new_state, message, return_value):
@@ -383,23 +388,24 @@ def try_exit():
         IOLoop.instance().stop()
         scheduler.shutdown()
         logger.info('exit success')
-        
+
+
 ### Initialization function - call after we initialize Flask and the DB
 def initialize_revere():
     global sources, alerts
-    
+
     ### Initialize the sources
     for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
         sources[source_name] = get_klass(source_details['type'])(description=source_details.get('description'),
                                                                  config=source_details['config'])
-        
+
     ### Initialize the alerts
     for alert_name, alert_details in app.config.get('REVERE_ALERTS', {}).items():
         alerts[alert_name] = get_klass(alert_details['type'])(description=alert_details.get('description'),
                                                               config=alert_details['config'])
         alert = Alert.query.filter_by(key=alert_name).first()
         if not alert:
-            alert=Alert(key=alert_name)
+            alert = Alert(key=alert_name)
             db.session.add(alert)
     db.session.commit()
 
