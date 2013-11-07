@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Monitor History: {{ monitor.name }}{% endblock %}
+{% block content %}
+
+<h2>Monitor History: <a href="{{ url_for('monitor_detail', monitor_id=monitor.id) }}">{{ monitor.name }}</a></h2>
+
+<div class="pagination pagination-right">
+  <ul>
+  	{% if page == 1 %}
+    	<li class="disabled"><span>&laquo; Prev</span></li>
+    {% else %}
+    	<li class=""><a href="?page={{ page-1 }}">&laquo; Prev</a></li>
+    {% endif %}
+    <li class="disabled"><span>{{ page }}</span></li>
+    {% if page == last_page %}
+    	<li class="disabled"><span>Next &raquo;</span></li>
+    {% else %}
+    	<li class=""><a href="?page={{ page+1 }}">Next &raquo;</a></li>
+    {% endif %}
+  </ul>
+</div>
+
+<table class="table table-bordered table-striped">
+	<thead>
+		<tr>
+			<th>Timestamp</th>
+			<th>State</th>
+			<th>Return Value</th>
+			<th>Message</th>
+		</tr>
+	</thead>
+	{% for log in page_logs %}
+	<tr>
+		<td>
+			<span title="{{ log.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
+		</td>
+		<td>
+			{% if log.old_state != log.new_state %}
+				{{ log.old_state }} &rarr; {{ log.new_state }}
+			{% else %}
+				{{ log.old_state }}
+			{% endif %}
+		</td>
+		<td>{{ log.return_value }}</td>
+		<td>{{ log.message }}</td>
+	</tr>
+	{% endfor %}
+</table>
+
+{% endblock %}

@@ -16,18 +16,26 @@
 		<pre>{{ monitor.task }}</pre>
 	</div>
 	<div class="span4">
-		<h3>History</h3>
-		{% for change in monitor.changes.order_by('timestamp DESC').limit(20) %}
+		<h3><a href="{{ url_for('monitor_history', monitor_id=monitor.id) }}">History</a></h3>
+		{% for log in monitor.logs.filter('old_state!=new_state').order_by('timestamp DESC').limit(20) %}
 			<div class="togglemessage">
 				<div class="clearfix">
-					{{ change.old_state }} &rarr; {{ change.new_state }}
+					{{ log.old_state }} &rarr; {{ log.new_state }}
 					<div class="pull-right">
-						<span title="{{ change.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ change.timestamp.isoformat() }}Z"></span>
+						<span title="{{ log.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
 					</div>
 				</div>
 				<div class="message">
-					<div class="alert alert-info">
-						{{ change.message or 'None' }}
+					<div class="well" style="padding: 3px 5px;">
+						<div>
+							<strong>Message:</strong><br/>
+							{{ log.message or 'None' }}
+						</div>
+						<div>
+							<strong>Return Value:</strong><br/>
+							{{ log.return_value }}
+						</div>
+						
 					</div>
 				</div>
 			</div>

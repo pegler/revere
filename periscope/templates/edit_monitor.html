@@ -19,9 +19,14 @@
 	</div>
 {% endmacro %}
 
-<h2>Create a Monitor</h2>
+{% if create %}
+	<h2>Create a Monitor</h2>
+{% else %}
+	<h2>Edit Monitor: <a href="{{ url_for('monitor_detail', monitor_id=monitor.id) }}">{{ monitor.name }}</a></h2>
+{% endif %}
 <form class="form-horizontal" method="POST">
 	{{ render_field(form.name, style="width: 100%") }}
+	{{ render_field(form.retain_days) }}
 	{{ render_field(form.active) }}
 	<h3>Schedule</h3>
 	<p>
@@ -52,6 +57,9 @@
 	</p>
 	<p>
 		Raise a 'MonitorFailure' Exception if this monitor has failed.  All other exceptions will be considered errors.
+	</p>
+	<p>
+		Anything assigned to the variable "retval" will be retained in the logs.
 	</p>
 	{{ form.task(style="width: 100%", rows="15") }}
 	<div class="controls">

@@ -2,6 +2,7 @@ from apscheduler.scheduler import Scheduler
 from flask import Flask, render_template, request, url_for, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.wtf import Form
+from sqlalchemy.sql import and_, or_, not_
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.wsgi import WSGIContainer
@@ -11,6 +12,7 @@ import argparse
 import datetime
 import importlib
 import logging
+import math
 import os
 import signal
 import sqlalchemy.types as types
@@ -95,6 +97,8 @@ class Monitor(db.Model):
     active = db.Column(db.Boolean(), default=True)
     state = db.Column(ChoiceType(MONITOR_STATES))
     
+    retain_days = db.Column(db.Integer(), default=28)
+    
     schedule_year = db.Column(db.String(10), default="*")
     schedule_month = db.Column(db.String(10), default="*")
     schedule_day = db.Column(db.String(10), default="*")
@@ -104,15 +108,17 @@ class Monitor(db.Model):
     schedule_minute = db.Column(db.String(10), default="*")
     schedule_second = db.Column(db.String(10), default="0")
     
-    def record_change(self, new_state, message):
+    def record_run(self, new_state, message, return_value):
         global db
         
         old_state = self.state
-        change = MonitorChange(monitor=self,
-                               message=message,
-                               old_state=old_state,
-                               new_state=new_state,
-                               timestamp=datetime.datetime.utcnow())
+        change = MonitorLog(monitor=self,
+                            message=message,
+                            return_value=return_value,
+                            old_state=old_state,
+                            new_state=new_state,
+                            timestamp=datetime.datetime.utcnow())
+        
         self.state = new_state
         db.session.add(change)
         db.session.add(self)
@@ -122,33 +128,37 @@ class Monitor(db.Model):
         class MonitorFailure(Exception):
             pass
         
+        retval = None
+        message = None
+        new_status = None
+        
         try:
             exec(self.task)
         except MonitorFailure, e:
-            if self.state == 'ALARM':
-                return
-            self.record_change('ALARM', unicode(e))
+            message = unicode(e)
+            new_status = 'ALARM'
         except Exception, e:
-            if self.state == 'ERROR':
-                return
-            self.record_change('ERROR', unicode(e))
+            message = unicode(e)
+            new_status = 'ERROR'
         else:
-            if self.state == 'OK':
-                return
-            self.record_change('OK', 'Monitor Passed')
+            message = 'Monitor Passed'
+            new_status = 'OK'
+            
+        self.record_run(new_status, message, retval)
         
-class MonitorChange(db.Model):
+class MonitorLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     monitor_id = db.Column(db.Integer, db.ForeignKey('monitor.id'))
     monitor = db.relationship('Monitor',
-        backref=db.backref('changes', lazy='dynamic'))
+        backref=db.backref('logs', lazy='dynamic'))
     message = db.Column(db.Text())
-    old_state = db.Column(ChoiceType(MONITOR_STATES))
-    new_state = db.Column(ChoiceType(MONITOR_STATES))
-    timestamp = db.Column(db.DateTime())
+    return_value = db.Column(db.String(255))
+    old_state = db.Column(ChoiceType(MONITOR_STATES), index=True)
+    new_state = db.Column(ChoiceType(MONITOR_STATES), index=True)
+    timestamp = db.Column(db.DateTime(), index=True)
     
 MonitorForm = model_form(Monitor, base_class=Form,
-                         exclude=['id','state','changes'],
+                         exclude=['id','state','logs'],
                          field_args = {
                             'schedule_year' : {
                                 'validators' : [validators.Length(min=4, max=50)]
@@ -191,6 +201,39 @@ def monitor_detail(monitor_id):
     
     return render_template('monitor_detail.html', monitor=monitor)
 
+@app.route('/monitor/<monitor_id>/history')
+def monitor_history(monitor_id):
+    monitor = Monitor.query.get_or_404(monitor_id)
+    
+    logs = monitor.logs.order_by('timestamp DESC')
+    count = logs.count()
+    per_page = 100
+    last_page = math.ceil(count/float(per_page))
+    page = 1
+    
+    try:
+        page = int(request.args.get('page',1))
+    except:
+        page = 1
+        
+    if page > last_page:
+        page = last_page
+        
+    if page < 1:
+        page = 1
+        
+    page = int(page)
+    
+    page_logs = logs.limit(per_page).offset((page-1)*per_page)
+    
+    return render_template('monitor_history.html',
+                           monitor=monitor,
+                           page_logs=page_logs,
+                           count=count,
+                           per_page = per_page,
+                           last_page=last_page,
+                           page=page)
+
 @app.route('/monitor/<monitor_id>/edit', methods=['GET','POST'])
 def monitor_edit(monitor_id):
     monitor = Monitor.query.get_or_404(monitor_id)
@@ -201,13 +244,13 @@ def monitor_edit(monitor_id):
         db.session.add(monitor)
         db.session.commit()
         
-        monitor.record_change('INACTIVE', 'Monitor edited')
+        monitor.record_run('INACTIVE', 'Monitor edited', None)
         
         update_monitor_scheduler(monitor)
         
         return redirect(url_for('monitor_detail', monitor_id=monitor.id))
     
-    return render_template('edit_monitor.html', form=form, sources=sources, create=True)
+    return render_template('edit_monitor.html', form=form, sources=sources, monitor=monitor, create=False)
 
 @app.route('/create', methods=['GET','POST'])
 def create():
@@ -225,6 +268,15 @@ def create():
     return render_template('edit_monitor.html', form=form, sources=sources, create=True)
 
 ## Scheduler utility functions
+def monitor_maintenance():
+    for monitor in Monitor.query.all():
+        now = datetime.datetime.utcnow()
+        cutoff = now-datetime.timedelta(days=monitor.retain_days)
+        MonitorLog.query.filter( and_(MonitorLog.monitor_id == monitor.id, MonitorLog.timestamp < cutoff )).delete()
+        
+# Run the maintenance routine hourly
+scheduler.add_cron_job(monitor_maintenance, year="*", month="*", day="*", hour="*", minute="0")
+
 def run_monitor(monitor_id):
     monitor = Monitor.query.get(monitor_id)
     monitor.run()
