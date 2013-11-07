@@ -10,4 +10,4 @@ install:
 script:
   - make test
 after_script:
-  coveralls --verbose
+  coveralls

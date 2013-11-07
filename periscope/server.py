@@ -284,16 +284,19 @@ def run_monitor(monitor_id):
     monitor = Monitor.query.get(monitor_id)
     monitor.run()
 
+monitor_jobs = {}
+
 
 def update_monitor_scheduler(monitor):
-    global scheduler
+    global scheduler, monitor_jobs
     #remove the old schedule
-    for job in scheduler.get_jobs():
-        if job.func == run_monitor and job.kwargs['monitor_id'] == monitor.id:
-            scheduler.unschedule_job(job)
+    job = monitor_jobs.get(monitor.id)
+    if job:
+        scheduler.unschedule_job(job)
+        del monitor_jobs[monitor.id]
 
     if monitor.active:
-        scheduler.add_cron_job(run_monitor,
+        job = scheduler.add_cron_job(run_monitor,
                                kwargs={'monitor_id': monitor.id},
                                year=monitor.schedule_year,
                                month=monitor.schedule_month,
@@ -303,6 +306,7 @@ def update_monitor_scheduler(monitor):
                                hour=monitor.schedule_hour,
                                minute=monitor.schedule_minute,
                                second=monitor.schedule_second)
+        monitor_jobs[monitor.id] = job
 
 ## Allow clean exiting
 
