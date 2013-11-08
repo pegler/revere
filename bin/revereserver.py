@@ -245,11 +245,16 @@ def send_alert(monitor, old_state, new_state, message, return_value):
 
 
 def monitor_maintenance():
-    for monitor in Monitor.query.all():
-        now = datetime.datetime.utcnow()
-        cutoff = now - datetime.timedelta(days=monitor.retain_days)
-        MonitorLog.query.filter(and_(MonitorLog.monitor_id == monitor.id, MonitorLog.timestamp < cutoff)).delete()
-
+    try:
+        for monitor in Monitor.query.all():
+            now = datetime.datetime.utcnow()
+            cutoff = now - datetime.timedelta(days=monitor.retain_days)
+            MonitorLog.query.filter(and_(MonitorLog.monitor_id == monitor.id, MonitorLog.timestamp < cutoff)).delete(synchronize_session='fetch')
+    except:
+        db.session.rollback()
+        raise
+    else:
+        db.session.commit()
 
 def run_monitor(monitor_id):
     try:
