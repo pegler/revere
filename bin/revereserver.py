@@ -118,6 +118,7 @@ class Monitor(db.Model):
     task = db.Column(db.Text())
     active = db.Column(db.Boolean(), default=True)
     state = db.Column(ChoiceType(MONITOR_STATES))
+    last_run_timestamp = db.Column(db.DateTime())
 
     retain_days = db.Column(db.Integer(), default=28)
 
@@ -139,15 +140,18 @@ class Monitor(db.Model):
         if state_changed:
             send_alert(self, old_state, new_state, message, return_value)
 
+        timestamp = datetime.datetime.utcnow()
+
         change = MonitorLog(monitor=self,
                             message=message,
                             return_value=return_value,
                             old_state=old_state,
                             new_state=new_state,
                             state_changed=state_changed,
-                            timestamp=datetime.datetime.utcnow())
+                            timestamp=timestamp)
 
         self.state = new_state
+        self.last_run_timestamp = timestamp
         db.session.add(change)
         db.session.add(self)
         db.session.commit()
@@ -409,7 +413,8 @@ def create_app():
             form.populate_obj(monitor)
             db.session.add(monitor)
             db.session.commit()
-            #monitor.record_run('INACTIVE', 'Monitor edited', None)
+            if monitor.active == False:
+                monitor.record_run('INACTIVE', 'Monitor edited', None)
             update_monitor_scheduler(monitor)
             return redirect(url_for('monitor_detail', monitor_id=monitor.id))
         return render_template('monitor_edit.html', form=form, sources=sources, monitor=monitor, create=False)
