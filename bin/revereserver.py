@@ -252,8 +252,14 @@ def monitor_maintenance():
 
 
 def run_monitor(monitor_id):
-    monitor = Monitor.query.get(monitor_id)
-    monitor.run()
+    try:
+        monitor = Monitor.query.get(monitor_id)
+        monitor.run()
+    except:
+        db.session.rollback()
+        raise
+    else:
+        db.session.commit()
 
 
 def update_monitor_scheduler(monitor):
