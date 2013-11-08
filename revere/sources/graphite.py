@@ -34,5 +34,6 @@ class GraphiteSource(BaseRevereSource):
 
     def get_sum(self, path, from_date=None, to_date=None):
         """ apply the integral() graphite function to the path and return the value of the last datapoint """
-        data = self.get_datapoints('integral(%s)' % path, from_date, to_date)[-1]
-        return data[0]
+        data = self.get_datapoints('%s' % path, from_date, to_date)
+        total = reduce(lambda a,b: a+b, [x[0] for x in data if x[0]], 0)
+        return total
