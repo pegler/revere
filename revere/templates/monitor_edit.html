@@ -49,7 +49,7 @@
 				<strong>sources</strong> - a dict as defined in the configuration
 				<ul>
 					{% for source_name, source in sources.items() %}
-						<li>source['{{ source_name }}'] - {{ source.name }}<br/>{{ source.description }}</li>
+						<li>sources['{{ source_name }}'] - {{ source.name }}<br/>{{ source.description }}</li>
 					{% endfor %}
 				</ul>
 			</li>
