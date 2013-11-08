@@ -2,6 +2,7 @@
 
 {% block title %}Monitor Detail: {{ monitor.name }}{% endblock %}
 {% block content %}
+{% from '_macros.html' import state_label %}
 
 <div class="clearfix">
 	<div class="pull-right">
@@ -20,7 +21,7 @@
 		{% for log in monitor.logs.filter_by(state_changed=True).order_by('timestamp DESC').limit(20) %}
 			<div class="togglemessage">
 				<div class="clearfix">
-					{{ log.old_state }} &rarr; {{ log.new_state }}
+					{{ state_label(log.old_state) }} &rarr; {{ state_label(log.new_state) }}
 					<div class="pull-right">
 						<span title="{{ log.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
 					</div>

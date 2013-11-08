@@ -1,0 +1,20 @@
+
+{% macro render_field(field) %}
+	<div class="control-group">
+		<label class="control-label">{{ field.label.text }}</label>
+		<div class="controls">
+			{{ field(**kwargs)|safe }}
+			{% if field.errors %}
+				<ul>
+					{% for error in field.errors %}
+				      <li>{{ error }}</li>
+				    {% endfor %}
+			    </ul>
+			{% endif %}
+		</div>
+	</div>
+{% endmacro %}
+
+{% macro state_label(state) %}
+<span class="label {% if state.lower() in ['ok'] %}label-success{% endif %}{% if state.lower() in ['alarm', 'error'] %}label-important{% endif %}">{{ state.upper() }}</span>
+{% endmacro %}

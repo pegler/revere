@@ -2,6 +2,8 @@
 
 {% block title %}Monitors{% endblock %}
 {% block content %}
+{% from '_macros.html' import state_label %}
+
 <div class="clearfix">
 	<div class="pull-right">
 		<a class="btn btn-info" href="/create">Create Monitor</a>
@@ -20,7 +22,7 @@
 		{% for monitor in monitors %}
 		<tr>
 			<td>{{ monitor.name }}</td>
-			<td>{{ monitor.state }}</td>
+			<td>{{ state_label(monitor.state) }}</td>
 			<td><a class="btn btn-small" href="{{ url_for('monitor_detail', monitor_id=monitor.id) }}">Detail</a></td>
 		</tr>
 		{% endfor %}

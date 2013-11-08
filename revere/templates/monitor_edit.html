@@ -3,21 +3,7 @@
 {% block title %}Create a Monitor{% endblock %}
 
 {% block content %}
-{% macro render_field(field) %}
-	<div class="control-group">
-		<label class="control-label">{{ field.label.text }}</label>
-		<div class="controls">
-			{{ field(**kwargs)|safe }}
-			{% if field.errors %}
-				<ul>
-					{% for error in field.errors %}
-				      <li>{{ error }}</li>
-				    {% endfor %}
-			    </ul>
-			{% endif %}
-		</div>
-	</div>
-{% endmacro %}
+{% from '_macros.html' import render_field %}
 
 {% if create %}
 	<h2>Create a Monitor</h2>
