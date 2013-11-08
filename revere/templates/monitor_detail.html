@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-{% from '_macros.html' import state_label %}
+{% from '_macros.html' import state_label, livestamp %}
 
 <div class="clearfix">
 	<div class="pull-right">
@@ -30,7 +30,7 @@
 				<div class="clearfix">
 					{{ state_label(log.old_state) }} &rarr; {{ state_label(log.new_state) }}
 					<div class="pull-right">
-						<span title="{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
+						{{ livestamp(log.timestamp) }}
 					</div>
 				</div>
 				<div class="message">

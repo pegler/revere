@@ -2,10 +2,11 @@
 
 {% block title %}Monitor History: {{ monitor.name }}{% endblock %}
 {% block content %}
-{% from '_macros.html' import state_label %}
+{% from '_macros.html' import state_label, livestamp %}
 
 <h2>Monitor History: <a href="{{ url_for('monitor_detail', monitor_id=monitor.id) }}">{{ monitor.name }}</a></h2>
 
+{% macro page_links() %}
 <div class="pagination pagination-right">
   <ul>
   	{% if page == 1 %}
@@ -21,6 +22,9 @@
     {% endif %}
   </ul>
 </div>
+{% endmacro %}
+
+{{ page_links() }}
 
 <table class="table table-bordered table-striped">
 	<thead>
@@ -34,7 +38,7 @@
 	{% for log in page_logs %}
 	<tr>
 		<td>
-			<span title="{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
+			{{ livestamp(log.timestamp) }}
 		</td>
 		<td>
 			{% if log.old_state != log.new_state %}
@@ -48,5 +52,7 @@
 	</tr>
 	{% endfor %}
 </table>
+
+{{ page_links() }}
 
 {% endblock %}

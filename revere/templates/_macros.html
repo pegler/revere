@@ -18,3 +18,7 @@
 {% macro state_label(state) %}
 <span class="label {% if state.lower() in ['ok'] %}label-success{% endif %}{% if state.lower() in ['alarm', 'error'] %}label-important{% endif %}">{{ state.upper() }}</span>
 {% endmacro %}
+
+{% macro livestamp(timestamp) %}
+<span title="{{ timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}" data-livestamp="{{ timestamp.isoformat() }}Z"></span>
+{% endmacro %}
