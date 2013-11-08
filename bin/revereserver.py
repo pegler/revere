@@ -404,7 +404,7 @@ def create_app():
             form.populate_obj(monitor)
             db.session.add(monitor)
             db.session.commit()
-            monitor.record_run('INACTIVE', 'Monitor edited', None)
+            #monitor.record_run('INACTIVE', 'Monitor edited', None)
             update_monitor_scheduler(monitor)
             return redirect(url_for('monitor_detail', monitor_id=monitor.id))
         return render_template('monitor_edit.html', form=form, sources=sources, monitor=monitor, create=False)
