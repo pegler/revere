@@ -30,7 +30,7 @@
 				<div class="clearfix">
 					{{ state_label(log.old_state) }} &rarr; {{ state_label(log.new_state) }}
 					<div class="pull-right">
-						<span title="{{ log.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
+						<span title="{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
 					</div>
 				</div>
 				<div class="message">

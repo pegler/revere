@@ -34,7 +34,7 @@
 	{% for log in page_logs %}
 	<tr>
 		<td>
-			<span title="{{ log.timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
+			<span title="{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}" data-livestamp="{{ log.timestamp.isoformat() }}Z"></span>
 		</td>
 		<td>
 			{% if log.old_state != log.new_state %}

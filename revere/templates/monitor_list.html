@@ -24,7 +24,7 @@
 		<tr>
 			<td>{{ monitor.name }}</td>
 			<td>{{ state_label(monitor.state) }}</td>
-			<td><span title="{{ monitor.last_run_timestamp.strftime('%Y-%m-%d %H-%M-%S UTC') }}" data-livestamp="{{ monitor.last_run_timestamp.isoformat() }}Z"></span></td>
+			<td><span title="{{ monitor.last_run_timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}" data-livestamp="{{ monitor.last_run_timestamp.isoformat() }}Z"></span></td>
 			<td><a class="btn btn-small" href="{{ url_for('monitor_detail', monitor_id=monitor.id) }}">Detail</a></td>
 		</tr>
 		{% endfor %}
