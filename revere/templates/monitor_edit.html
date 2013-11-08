@@ -2,6 +2,10 @@
 
 {% block title %}Create a Monitor{% endblock %}
 
+{% block head %}
+<script type="text/javascript" src="{{ url_for('static', filename='ace.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 {% from '_macros.html' import render_field %}
 
@@ -47,9 +51,27 @@
 	<p>
 		Anything assigned to the variable "return_value" will be retained in the logs.
 	</p>
+	<div style="position: relative; height: 300px; width: 100%; border: solid 2px #666;">
+		<div id="editor"></div>
+	</div>
 	{{ form.task(style="width: 100%", rows="15") }}
-	<div class="controls">
+	<div class="controls" style="margin-top: 2em;">
 		<button type="submit" class="btn btn-large btn-primary">Save Monitor</button>
 	</div>
 </form>
+
+<script type="text/javascript">
+$(function(){
+	var editor = ace.edit("editor");
+	var textarea = $('textarea#task').hide();
+	editor.getSession().setValue(textarea.val());
+	editor.getSession().setMode("ace/mode/python");
+	editor.setTheme("ace/theme/chrome");
+	editor.setShowPrintMargin(false);
+	editor.getSession().on('change', function(){
+	  textarea.val(editor.getSession().getValue());
+	});
+});
+</script>
+
 {% endblock %}

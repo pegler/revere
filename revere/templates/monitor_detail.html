@@ -1,6 +1,11 @@
 {% extends "layout.html" %}
 
 {% block title %}Monitor Detail: {{ monitor.name }}{% endblock %}
+
+{% block head %}
+<script type="text/javascript" src="{{ url_for('static', filename='ace.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 {% from '_macros.html' import state_label %}
 
@@ -12,9 +17,11 @@
 </div>
 
 <div class="row">
-	<div class="span6">
+	<div class="span8">
 		<h3>Task</h3>
-		<pre>{{ monitor.task }}</pre>
+		<div style="position: relative; height: 300px; width: 100%; border: solid 2px #666;">
+			<div id="editor">{{ monitor.task }}</div>
+		</div>
 	</div>
 	<div class="span4">
 		<h3><a href="{{ url_for('monitor_history', monitor_id=monitor.id) }}">History</a></h3>
@@ -44,5 +51,15 @@
 		{% endfor %}
 	</div>
 </div>
+
+<script type="text/javascript">
+$(function(){
+	var editor = ace.edit("editor");
+	editor.getSession().setMode("ace/mode/python");
+	editor.setTheme("ace/theme/chrome");
+	editor.setShowPrintMargin(false);
+	editor.setReadOnly(true);
+});
+</script>
 
 {% endblock %}
