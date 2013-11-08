@@ -14,6 +14,7 @@ import importlib
 import logging
 import math
 import os
+import os
 import signal
 import sqlalchemy.types as types
 import sys
@@ -28,32 +29,22 @@ ch.setFormatter(formatter)
 root.setLevel(logging.DEBUG)
 root.addHandler(ch)
 
-if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description='Revere - general purpose monitoring and alerting')
-    subparsers = argparser.add_subparsers(help='sub-command help', dest='subparser_name')
+argparser = argparse.ArgumentParser(description='Revere - general purpose monitoring and alerting')
+subparsers = argparser.add_subparsers(help='sub-command help', dest='subparser_name')
 
-    parser_run = subparsers.add_parser('run', help="run the server")
-    parser_run.add_argument("-c", "--config", help="specify config file")
-    parser_run.add_argument("-p", "--port", default='5000', help="port to run the server on")
+parser_run = subparsers.add_parser('run', help="run the server")
+parser_run.add_argument("-p", "--port", default=5000, type=int, help="port to run the server on")
 
-    parser_init = subparsers.add_parser('init', help="initialize Revere - create a sqlite database and table")
+parser_init = subparsers.add_parser('init', help="initialize Revere - create a sqlite database and table")
 
-    args = argparser.parse_args()
+argparser.add_argument("-c", "--config", default='config.py', help="specify config file")
 
-app = Flask('revere')
-app.config['WTF_CSRF_ENABLED'] = False
-app.config.from_pyfile('config.py')
+args = argparser.parse_args()
 
 scheduler = Scheduler()
 
-DIRNAME = os.path.abspath(os.path.dirname(__file__))
-
 ### Models
-if 'SQLALCHEMY_DATABASE_URI' not in app.config:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(DIRNAME, 'revere.db')
-
-db = SQLAlchemy(app)
-
+db = SQLAlchemy()
 
 class ChoiceType(types.TypeDecorator):
     impl = types.Integer
@@ -232,96 +223,6 @@ MonitorForm = model_form(Monitor, base_class=Form,
                         })
 
 
-@app.route('/')
-def monitor_list():
-    monitors = Monitor.query.all()
-    return render_template('monitor_list.html', monitors=monitors)
-
-
-@app.route('/monitor/<monitor_id>')
-def monitor_detail(monitor_id):
-    monitor = Monitor.query.get_or_404(monitor_id)
-    return render_template('monitor_detail.html', monitor=monitor)
-
-
-@app.route('/monitor/<monitor_id>/history')
-def monitor_history(monitor_id):
-    monitor = Monitor.query.get_or_404(monitor_id)
-
-    logs = monitor.logs.order_by('timestamp DESC')
-    count = logs.count()
-    per_page = 100
-    last_page = math.ceil(count / float(per_page))
-    page = 1
-
-    try:
-        page = int(request.args.get('page', 1))
-    except:
-        page = 1
-
-    if page > last_page:
-        page = last_page
-    if page < 1:
-        page = 1
-    page = int(page)
-    page_logs = logs.limit(per_page).offset((page - 1) * per_page)
-
-    return render_template('monitor_history.html',
-                           monitor=monitor,
-                           page_logs=page_logs,
-                           count=count,
-                           per_page=per_page,
-                           last_page=last_page,
-                           page=page)
-
-
-@app.route('/monitor/<monitor_id>/edit', methods=['GET', 'POST'])
-def monitor_edit(monitor_id):
-    monitor = Monitor.query.get_or_404(monitor_id)
-
-    form = MonitorForm(request.form, monitor)
-    if form.validate_on_submit():
-        form.populate_obj(monitor)
-        db.session.add(monitor)
-        db.session.commit()
-        monitor.record_run('INACTIVE', 'Monitor edited', None)
-        update_monitor_scheduler(monitor)
-        return redirect(url_for('monitor_detail', monitor_id=monitor.id))
-    return render_template('monitor_edit.html', form=form, sources=sources, monitor=monitor, create=False)
-
-
-@app.route('/create', methods=['GET', 'POST'])
-def create():
-    form = MonitorForm(request.form)
-    if request.method == 'POST' and form.validate():
-        new_monitor = Monitor(state='INACTIVE')
-        form.populate_obj(new_monitor)
-        db.session.add(new_monitor)
-        db.session.commit()
-        update_monitor_scheduler(new_monitor)
-        return redirect(url_for('monitor_detail', monitor_id=new_monitor.id))
-    return render_template('monitor_edit.html', form=form, sources=sources, create=True)
-
-
-@app.route('/alerts')
-def alert_list():
-    alerts = Alert.query.all()
-    return render_template('alert_list.html', alerts=alerts)
-
-
-@app.route('/alert/<alert_id>/edit', methods=['GET', 'POST'])
-def alert_edit(alert_id):
-    alert = Alert.query.get_or_404(alert_id)
-
-    form = AlertForm(request.form, alert)
-    if form.validate_on_submit():
-        form.populate_obj(alert)
-        db.session.add(alert)
-        db.session.commit()
-        return redirect(url_for('alert_list'))
-    return render_template('alert_edit.html', form=form, alert=alert)
-
-
 def get_klass(klass):
     module_name, class_name = klass.rsplit(".", 1)
     module = importlib.import_module(module_name)
@@ -396,10 +297,31 @@ def try_exit():
         scheduler.shutdown()
         logger.info('exit success')
 
+def initialize_app():
+    global db
+    
+    app = Flask('revere')
+    app.config['WTF_CSRF_ENABLED'] = False
+    
+    config_path = args.config
+    if config_path[0] != '/':
+        config_path = os.path.join(os.getcwd(), config_path)
+    app.config.from_pyfile(config_path)
+        
+    database_path = app.config['DATABASE_PATH']
+    if database_path[0] != '/':
+        database_path = os.path.join(os.getcwd(), database_path)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + database_path
+    
+    db.app = app
+    db.init_app(app)
+    
+    return app
 
-### Initialization function - call after we initialize Flask and the DB
-def initialize_revere():
-    global sources, alerts
+def create_app():
+    global sources, alerts, db
+
+    app = initialize_app()
 
     ### Initialize the sources
     for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
@@ -424,27 +346,119 @@ def initialize_revere():
     # Run the maintenance routine hourly
     scheduler.add_cron_job(monitor_maintenance, year="*", month="*", day="*", hour="*", minute="0")
 
-
-if __name__ == '__main__':
-    if args.subparser_name == 'init':
-        db.create_all()
-        sys.exit(0)
-
-    if args.subparser_name == 'run':
-        signal.signal(signal.SIGINT, signal_handler)
-        http_server = HTTPServer(WSGIContainer(app))
-        http_server.listen(args.port)
-        PeriodicCallback(try_exit, 100).start()
-        logger.info('Scheduling monitors')
-        for monitor in Monitor.query.filter_by(active=True):
+    @app.route('/')
+    def monitor_list():
+        monitors = Monitor.query.all()
+        return render_template('monitor_list.html', monitors=monitors)
+    
+    
+    @app.route('/monitor/<monitor_id>')
+    def monitor_detail(monitor_id):
+        monitor = Monitor.query.get_or_404(monitor_id)
+        return render_template('monitor_detail.html', monitor=monitor)
+    
+    
+    @app.route('/monitor/<monitor_id>/history')
+    def monitor_history(monitor_id):
+        monitor = Monitor.query.get_or_404(monitor_id)
+    
+        logs = monitor.logs.order_by('timestamp DESC')
+        count = logs.count()
+        per_page = 100
+        last_page = math.ceil(count / float(per_page))
+        page = 1
+    
+        try:
+            page = int(request.args.get('page', 1))
+        except:
+            page = 1
+    
+        if page > last_page:
+            page = last_page
+        if page < 1:
+            page = 1
+        page = int(page)
+        page_logs = logs.limit(per_page).offset((page - 1) * per_page)
+    
+        return render_template('monitor_history.html',
+                               monitor=monitor,
+                               page_logs=page_logs,
+                               count=count,
+                               per_page=per_page,
+                               last_page=last_page,
+                               page=page)
+    
+    
+    @app.route('/monitor/<monitor_id>/edit', methods=['GET', 'POST'])
+    def monitor_edit(monitor_id):
+        monitor = Monitor.query.get_or_404(monitor_id)
+    
+        form = MonitorForm(request.form, monitor)
+        if form.validate_on_submit():
+            form.populate_obj(monitor)
+            db.session.add(monitor)
+            db.session.commit()
+            monitor.record_run('INACTIVE', 'Monitor edited', None)
             update_monitor_scheduler(monitor)
-        logger.info('Scheduler starting')
-        scheduler.start()
-        logger.info('Scheduler started')
-        logger.info('Initializing Revere')
-        initialize_revere()
-        logger.info('Initialized Revere')
-        logger.info('Tornado (webserver) starting')
-        logger.info('Revere Server running on port %s' % args.port)
-        IOLoop.instance().start()
-        sys.exit(0)
+            return redirect(url_for('monitor_detail', monitor_id=monitor.id))
+        return render_template('monitor_edit.html', form=form, sources=sources, monitor=monitor, create=False)
+    
+    
+    @app.route('/create', methods=['GET', 'POST'])
+    def create():
+        form = MonitorForm(request.form)
+        if request.method == 'POST' and form.validate():
+            new_monitor = Monitor(state='INACTIVE')
+            form.populate_obj(new_monitor)
+            db.session.add(new_monitor)
+            db.session.commit()
+            update_monitor_scheduler(new_monitor)
+            return redirect(url_for('monitor_detail', monitor_id=new_monitor.id))
+        return render_template('monitor_edit.html', form=form, sources=sources, create=True)
+    
+    
+    @app.route('/alerts')
+    def alert_list():
+        alerts = Alert.query.all()
+        return render_template('alert_list.html', alerts=alerts)
+    
+    
+    @app.route('/alert/<alert_id>/edit', methods=['GET', 'POST'])
+    def alert_edit(alert_id):
+        alert = Alert.query.get_or_404(alert_id)
+    
+        form = AlertForm(request.form, alert)
+        if form.validate_on_submit():
+            form.populate_obj(alert)
+            db.session.add(alert)
+            db.session.commit()
+            return redirect(url_for('alert_list'))
+        return render_template('alert_edit.html', form=form, alert=alert)
+    
+    return app
+
+
+if args.subparser_name == 'init':
+    app = initialize_app()
+    db.create_all()
+    sys.exit(0)
+
+if args.subparser_name == 'run':
+    logger.info('Initializing Revere')
+    app = create_app()
+    logger.info('Initialized Revere')
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(int(args.port))
+    PeriodicCallback(try_exit, 100).start()
+    logger.info('Scheduling monitors')
+    for monitor in Monitor.query.filter_by(active=True):
+        update_monitor_scheduler(monitor)
+    logger.info('Scheduler starting')
+    scheduler.start()
+    logger.info('Scheduler started')
+    logger.info('Tornado (webserver) starting')
+    logger.info('Revere Server running on port %s' % args.port)
+    IOLoop.instance().start()
+    sys.exit(0)

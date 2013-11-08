@@ -5,7 +5,7 @@
 
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 README_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README')
@@ -24,5 +24,5 @@ setup(
     author_email='matt@pegler.co',
     url='https://github.com/pegler/revere/',
     packages=['revere'],
-    scripts=[],
+    scripts=['bin/revereserver.py'],
 )
