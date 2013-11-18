@@ -132,7 +132,7 @@ class Monitor(db.Model):
             message = 'Monitor Passed'
             new_status = 'OK'
 
-        if return_value is not None and not isinstance(return_value, (int, float, basestring)):
+        if return_value is not None and not isinstance(return_value, (int, long, float, basestring)):
             return_value = 'Invalid return_value'
 
         self.record_run(new_status, message, return_value)
