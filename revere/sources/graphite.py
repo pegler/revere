@@ -11,7 +11,7 @@ class GraphiteSource(BaseRevereSource):
         required_params = ['url']
         for param in required_params:
             if param not in config or not config[param]:
-                raise Exception('Graphite Alert Improperly Configured: missing parameter: %s' % param)
+                raise Exception('Graphite Source Improperly Configured: missing parameter: %s' % param)
         self.config = config
 
     def get_datapoints(self, path, from_date=None, to_date=None):
@@ -33,7 +33,13 @@ class GraphiteSource(BaseRevereSource):
         return response.json()[0]['datapoints']
 
     def get_sum(self, path, from_date=None, to_date=None):
-        """ apply the integral() graphite function to the path and return the value of the last datapoint """
+        """ sum the datapoints in a given range. summing in python is easier than using graphite's integral() function """
         data = self.get_datapoints('%s' % path, from_date, to_date)
         total = reduce(lambda a, b: a + b, [x[0] for x in data if x[0]], 0)
+        return total
+    
+    def get_avg(self, path, from_date=None, to_date=None):
+        """ get the average value for a given range.  null values are counted as 0 """
+        data = self.get_datapoints('%s' % path, from_date, to_date)
+        total = reduce(lambda a, b: a + b, [x[0] for x in data if x[0]], 0) / float(len(data))
         return total

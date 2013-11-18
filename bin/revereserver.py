@@ -37,7 +37,6 @@ if config_path[0] != '/':
 
 if not os.environ.get('REVERE_CONFIG_FILE'):
     os.environ['REVERE_CONFIG_FILE'] = config_path
-    print 'SET CONFIG PATH'
     
 if True: # to keep this from being organized to the top of the file by PyDev
     from revere import app, db, initialize, scheduler
