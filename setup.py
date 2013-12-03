@@ -17,7 +17,7 @@ else: LONG_DESCRIPTION = DESCRIPTION
 setup(
     name='revere',
     version='0.0.1',
-    install_requires=[],
+    install_requires=['Flask==0.10.1','Flask-SQLAlchemy==1.0','argparse','tornado>=3','APScheduler>=2','Flask-WTF','requests>=2'],
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     author='Matt Pegler',
