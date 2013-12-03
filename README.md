@@ -145,6 +145,35 @@ The only method is `execute(sql, as_dict=False)` which accepts raw SQL and retur
 Alerts
 -----
 
+### revere.alerts.campfire.CampfireAlert
+
+Send a message to a Campfire room of the form:
+
+```
+[Revere Alarm]
+Monitor: Mail Queue Length
+State Change: ALARM -> OK
+Message: Monitor Passed
+Return Value: 67
+```
+
+#### Configuration
+
+ - *api_token* - the API token for the user to send the message as
+ - *room_id* - the id for the room to post to.  Find this in the URL of the room
+ - *subdomain* - the subdomain for the room to post to.  Find this in the URL of the room
+
+
+### revere.alerts.sns.SNSAlert
+
+Send a message to an Amazon Web Services' Simple Notification Service (AWS SNS) Topic.  It will include a subject and body for emails as well as a shortened message to be sent to SMS subscribers.
+
+
+#### Configuration
+
+ - *topic_arn* - the topic ARN to post to.  Of the form: `arn:aws:sns:us-east-1:1234567890:topic-name`
+ - *access_key_id* - the API Access Key ID to post to the topic
+ - *secret_key* - the API Secret Key to post to the topic
 
 
 
