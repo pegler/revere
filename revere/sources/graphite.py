@@ -37,7 +37,7 @@ class GraphiteSource(BaseRevereSource):
         data = self.get_datapoints('%s' % path, from_date, to_date)
         total = reduce(lambda a, b: a + b, [x[0] for x in data if x[0]], 0)
         return total
-    
+
     def get_avg(self, path, from_date=None, to_date=None):
         """ get the average value for a given range.  null values are counted as 0 """
         data = self.get_datapoints('%s' % path, from_date, to_date)

@@ -15,7 +15,7 @@ class DatabaseSource(BaseRevereSource):
         self.config = config
         self.conn = create_engine(config['connection_string'], pool_recycle=config.get('pool_recycle', 3600))
         self.conn.connect()
-        
+
     def _convert_to_dict(self, row, keys):
         return dict(zip(keys, row))
 
