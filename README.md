@@ -176,7 +176,6 @@ Send a message to an Amazon Web Services' Simple Notification Service (AWS SNS) 
  - *secret_key* - the API Secret Key to post to the topic
 
 
-
 Screenshots
 -----
 
@@ -197,3 +196,14 @@ Full history for a monitor
 
 The list of alerts and which states they get triggered for.
 ![image](https://f.cloud.github.com/assets/94491/1660354/d1abe894-5bba-11e3-8bae-ad89a77d288c.png)
+
+
+Thanks
+------
+
+This project is mostly just cobbling together several other excellent projects.
+
+ - [Flask](http://flask.pocoo.org/) - the web front-end
+ - [SQLAlchemy](http://www.sqlalchemy.org/) - excellent lightweight database wrapper
+ - [APScheduler](http://pythonhosted.org/APScheduler/) - managing the schedule for the monitors
+ - [Tornado](http://www.tornadoweb.org/en/stable/) - lightweight web server
