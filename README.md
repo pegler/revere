@@ -6,7 +6,7 @@ Disclaimer
 
 Revere runs Python entered via a webpage.  It currently makes no attempt to sandbox this code.  Always run Revere as a non-privledged user and ensure it is secured behind some sort of authentication.
 
-This project was inspired by [LivingSocial's RearView](https://github.com/livingsocial/rearview).  We have been using it without issue for serveral weeks, but it is far from stable.
+This project was inspired by [LivingSocial's Rearview](https://github.com/livingsocial/rearview).  We have been using it without issue for serveral weeks, but it is far from stable.
 
 There is no built in authentication.  You must secure Revere behind your firewall somehow.
 
@@ -34,6 +34,9 @@ Installation
 ```
 pip install git+git://github.com/pegler/revere.git
 
+//create a config file.  defaults will be used if missing from the file
+touch config.py
+
 //create the SQLite database
 revereserver.py init
 
@@ -48,7 +51,7 @@ Configuration
 Revere uses a python file named config.py in the current working directory.  The configuration variables are:
 
  - `DATABASE_PATH` - the path to the SQLite file
- - `REVERE_SOURCES` - a dict specifying the sources.  The key can be anything and is used by the monitors to access the source.  The values is a configuration dict for the source.
+ - `REVERE_SOURCES` - a dict specifying the sources.  The key can be anything and is used by the monitors to access the source.  The value is a configuration dict for the source.
  - `REVERE_ALERTS` - a dict specifying the alerts
 
 Example config.py file:
@@ -98,6 +101,30 @@ REVERE_ALERTS = {
 }
 ```
 
+Monitors
+-----
+
+Monitors are configured using simple Python.  Simply navigate to the "Create Monitor" page, specify the schedule using crontab syntax, specify the retention period, and then write the Python that does the checking.  The script is executed with a dictionary named `sources` in scope that has the various sources configured available.  The keys are the same as specified in the configuration file.
+
+If the monitor has "failed" and should be in the ALARM state, the code should raise a `MonitorFailure` exception.  The message passed into the exception will be included in any alerts triggered from the ALARM state.
+
+Any other exception raised will be change the monitor to the ERROR state and trigger any enabled alerts.
+
+Any data assigned to the variable `return_value` will be recorded.  The data must be an int, float, long, string, or unicode.
+
+An example monitor:
+
+```
+total_requests = sources['dashing'].get_sum('sum(stats_counts.response.*)','-10min')
+error_requests = sources['dashing'].get_sum('stats_counts.response.500','-10min')
+error_percentage = error_requests/total_requests
+return_value = error_percentage
+
+if error_percentage >= .005:
+    raise MonitorFailure('High number of error responses. %s%%' % (error_percentage))
+```
+
+Alerts will often include the return value, message passed into `MonitorFailure`, and the current state of the monitor.
 
 
 Sources
@@ -123,6 +150,8 @@ It has 3 methods, all with identical parameters.
  - `from_date` - any valid graphite starting time.  example: '-5d'
  - `to_date` - any valid graphite starting time.  example: '-2d'
 
+Methods:
+
  - `get_datapoints(path, from_date=None, to_date=None)` - return a list of `(value, timestamp)` pairs for the path within the given timeframe
  - `get_sum(path, from_date=None, to_date=None)` - return the sum of the values.  null values are counted as 0
  - `get_avg(path, from_date=None, to_date=None)` - return the average of the values.  null values are counted as 0
@@ -144,6 +173,8 @@ The only method is `execute(sql, as_dict=False)` which accepts raw SQL and retur
 
 Alerts
 -----
+
+Alerts can be configured to only fire when a monitor transitions to a particular state.  So you can get a phone call when a monitor is in the ALARM state, but only get an email when it goes back to the OK state.
 
 ### revere.alerts.campfire.CampfireAlert
 
