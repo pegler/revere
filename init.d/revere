@@ -1,0 +1,39 @@
+#!/bin/bash
+# Revere service
+# Add this file to /etc/init.d/
+
+set -e
+
+# Must be a valid filename
+NAME=revere
+PIDFILE=/var/run/revere/revere.pid
+REVERE_DIR=/home/ubuntu/www/revere.example.com/
+DAEMON="/home/ubuntu/www/revere.example.com/revere/bin/python /home/ubuntu/www/revere.example.com/revere/bin/revereserver.py"
+DAEMON_OPTS="run"
+REVERE_USER="revere"
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+
+case "$1" in
+  start)
+    echo -n "Starting daemon: "$NAME
+    start-stop-daemon --start --background --chuid $REVERE_USER --chdir $REVERE_DIR --pidfile $PIDFILE --make-pidfile --exec /bin/bash -- -c "exec $DAEMON $DAEMON_OPTS > /var/log/revere.log 2>&1"
+    #cd $REVERE_DIR
+    #$DAEMON $DAEMON_OPTS > /var/log/revere.log 2>&1 &
+    #REVERE_PID=$(/bin/ps -eo pid,args | grep "$DAEMON" | grep -v grep | awk '{ print $1 }')
+    #echo $REVERE_PID > "$PIDFILE"
+    #echo $REVERE_PID
+    echo "."
+  ;;
+  stop)
+    echo -n "Stopping daemon: "$NAME
+    start-stop-daemon --stop --quiet --signal 9 --oknodo --pidfile $PIDFILE
+    echo "."
+  ;;
+
+  *)
+  echo "Usage: "$1" {start|stop}"
+  exit 1
+esac
+
+exit 0
