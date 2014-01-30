@@ -23,13 +23,15 @@ class GraphiteSource(BaseRevereSource):
         if self.config.get('auth_username') and self.config.get('auth_password'):
             auth = (self.config.get('auth_username'), self.config.get('auth_password'))
 
+        verify_ssl = self.config.get('verify_ssl', True)
+
         url = '%s?format=json&target=%s' % (base_url, path)
         if from_date:
             url += '&from=%s' % from_date
         if to_date:
             url += '&to=%s' % to_date
 
-        response = requests.get(url, auth=auth)
+        response = requests.get(url, auth=auth, verify=verify_ssl)
         return response.json()[0]['datapoints']
 
     def get_sum(self, path, from_date=None, to_date=None):
