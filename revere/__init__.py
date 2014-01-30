@@ -1,8 +1,10 @@
 from apscheduler.scheduler import Scheduler
-from flask import Flask
+from flask import Flask, request
+from flask.ext.googleauth import GoogleFederated
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import not_
 import os
+from werkzeug.contrib.fixers import ProxyFix
 
 app = Flask('revere')
 app.config['WTF_CSRF_ENABLED'] = False
@@ -16,6 +18,25 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + database_path
 scheduler = Scheduler()
 
 db = SQLAlchemy(app)
+
+google_apps_domain = app.config.get('GOOGLE_APPS_DOMAIN', None)
+if google_apps_domain:
+    auth = GoogleFederated(google_apps_domain, app)
+    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.secret_key = app.config.get('COOKIE_SECRET')
+
+    def _force_auth_on_every_request():
+
+        @auth.required
+        def _should_auth():
+            return None
+
+        if request.path.startswith('/login'):
+            return None
+
+        return _should_auth()
+
+    app.before_request(_force_auth_on_every_request)
 
 ### Define our data structures
 app.sources = {}
