@@ -19,27 +19,35 @@ class MonitorForm(ModelForm):
         exclude = ['state']
         field_args = {
             'schedule_year': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=50)]
             },
             'schedule_month': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
             'schedule_day': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
             'schedule_week': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
             'schedule_day_of_week': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
             'schedule_second': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
             'schedule_minute': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
             'schedule_second': {
+                'default': '*',
                 'validators': [validators.Length(min=1, max=10)]
             },
         }
