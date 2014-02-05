@@ -4,11 +4,11 @@ Revere [![Build Status](https://travis-ci.org/pegler/revere.png)](https://travis
 Disclaimer
 -----
 
-Revere runs Python entered via a webpage.  It currently makes no attempt to sandbox this code.  Always run Revere as a non-privledged user and ensure it is secured behind some sort of authentication.
+Revere runs Python entered via a webpage.  It currently makes no attempt to sandbox this code.  Always run Revere as a non-privledged user and ensure you have authentication set up.
 
-This project was inspired by [LivingSocial's Rearview](https://github.com/livingsocial/rearview).  We have been using it without issue for serveral weeks, but it is far from stable.
+This project was inspired by [LivingSocial's Rearview](https://github.com/livingsocial/rearview).  We have been using it without issue for serveral months, but it is far from stable.
 
-There is no built in authentication.  You must secure Revere behind your firewall somehow.
+There is optional Google Apps OAuth authentication built in, but due to the nature of this application, it is still hightly recommended that you secure Revere behind your firewall.
 
 Terms
 -----
@@ -26,7 +26,7 @@ Features
  - Store the return value of the monitor (numbers or strings) for each run
  - Automatic purging of old data (day granularity)
 
-Revere is a general purpose monitoring and alerting system.  It has pluggable sources of data and alerts.  So you can pull data from anywhere you want and then trigger alarms when certain thresholds are crossed.
+Revere is a general purpose monitoring and alerting system.  It has pluggable sources of data and alerts.  So you can pull data from anywhere you want and then trigger alarms when certain thresholds are crossed, all while using pure python for your calculations.
 
 Installation
 ------
@@ -53,11 +53,16 @@ Revere uses a python file named config.py in the current working directory.  The
  - `DATABASE_PATH` - the path to the SQLite file
  - `REVERE_SOURCES` - a dict specifying the sources.  The key can be anything and is used by the monitors to access the source.  The value is a configuration dict for the source.
  - `REVERE_ALERTS` - a dict specifying the alerts
+ - `GOOGLE_APPS_DOMAIN` - if specified, Google Apps OAuth Authentication will be enabled and enforced on all views.  The domain specified will be the only domain permitted access.  This requires specifying a `SECRET_KEY` in your config file as well.
 
 Example config.py file:
 
 ```
 DATABASE_PATH = 'revere.db'
+
+SECRET_KEY = 'something random and secret'
+
+#GOOGLE_APPS_DOMAIN = 'example.com' # optional
 
 REVERE_SOURCES = {
     'graphite': {
@@ -88,7 +93,7 @@ REVERE_ALERTS = {
             'room_id': '123456',
         }
     },
-    'teamup-ops-sns': {
+    'operations-sns': {
         'description': 'Publish a message to AWS SNS Topic operations',
         'type': 'revere.alerts.sns.SNSAlert',
         'config': {
@@ -238,3 +243,4 @@ This project is mostly just cobbling together several other excellent projects.
  - [SQLAlchemy](http://www.sqlalchemy.org/) - excellent lightweight database wrapper
  - [APScheduler](http://pythonhosted.org/APScheduler/) - managing the schedule for the monitors
  - [Tornado](http://www.tornadoweb.org/en/stable/) - lightweight web server
+ - [Google Federated Logins for Flask](https://github.com/sashka/flask-googleauth) - Google Apps Authentication
