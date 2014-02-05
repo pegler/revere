@@ -2,9 +2,7 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.wsgi import WSGIContainer
 import argparse
-import datetime
 import logging
-import math
 import os
 import signal
 import sys
