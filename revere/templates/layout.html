@@ -3,11 +3,11 @@
   <head>
   	<meta charset="utf-8">
   	
-    <link href="//netdna.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='app.css') }}" rel="stylesheet">
     
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-    <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='moment.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='livestamp.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
