@@ -23,7 +23,7 @@ google_apps_domain = app.config.get('GOOGLE_APPS_DOMAIN', None)
 if google_apps_domain:
     auth = GoogleFederated(google_apps_domain, app)
     app.wsgi_app = ProxyFix(app.wsgi_app)
-    app.secret_key = app.config.get('COOKIE_SECRET')
+    app.secret_key = app.config.get('SECRET_KEY') or app.config.get('COOKIE_SECRET')
 
     def _force_auth_on_every_request():
 
