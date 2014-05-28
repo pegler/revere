@@ -1,6 +1,5 @@
 from revere.alerts.base import BaseRevereAlert
 import requests
-import json
 
 
 class HipChatAlert(BaseRevereAlert):
@@ -23,9 +22,9 @@ class HipChatAlert(BaseRevereAlert):
             'message': message,
             'return_value': return_value,
         }
-        
+
         color = 'green' if new_state == 'OK' else 'red'
-        
+
         params = {
             'room_id': self.config['room_name'],
             'from': self.config.get('from_name', 'Revere'),
@@ -37,6 +36,6 @@ class HipChatAlert(BaseRevereAlert):
 
         headers = {'Content-Type': 'application/json'}
 
-        response = requests.post('https://api.hipchat.com/v1/rooms/message?auth_token=%s' % self.config['auth_token'],
+        requests.post('https://api.hipchat.com/v1/rooms/message?auth_token=%s' % self.config['auth_token'],
                       params=params,
                       headers=headers)

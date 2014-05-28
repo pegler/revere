@@ -11,7 +11,7 @@ def get_klass(klass):
     return getattr(module, class_name)
 
 
-### Alert utility functions
+# Alert utility functions
 def send_alert(monitor, old_state, new_state, message, return_value):
     for alert_name, alert in app.alerts.items():
         alert_obj = Alert.query.filter_by(key=alert_name).first()
@@ -19,7 +19,7 @@ def send_alert(monitor, old_state, new_state, message, return_value):
             alert.trigger(monitor, old_state, new_state, message, return_value)
 
 
-## Scheduler utility functions
+# Scheduler utility functions
 def monitor_maintenance():
     try:
         for monitor in Monitor.query.all():
@@ -45,7 +45,7 @@ def run_monitor(monitor_id):
 
 
 def update_monitor_scheduler(monitor):
-    #remove the old schedule
+    # remove the old schedule
     job = app.monitor_jobs.get(monitor.id)
     if job:
         scheduler.unschedule_job(job)

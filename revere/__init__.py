@@ -38,21 +38,21 @@ if google_apps_domain:
 
     app.before_request(_force_auth_on_every_request)
 
-### Define our data structures
+# Define our data structures
 app.sources = {}
 app.alerts = {}
 app.monitor_jobs = {}
 
 
 def initialize(app):
-    ### Initialize the sources
+    # Initialize the sources
     for source_name, source_details in app.config.get('REVERE_SOURCES', {}).items():
         if source_details.get('enabled') is False:
             continue
         app.sources[source_name] = get_klass(source_details['type'])(description=source_details.get('description'),
                                                                  config=source_details['config'])
 
-    ### Initialize the alerts
+    # Initialize the alerts
     for alert_name, alert_details in app.config.get('REVERE_ALERTS', {}).items():
         app.alerts[alert_name] = get_klass(alert_details['type'])(description=alert_details.get('description'),
                                                                   config=alert_details['config'],
